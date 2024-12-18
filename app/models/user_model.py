@@ -5,7 +5,7 @@ import uuid
 from sqlalchemy import (
     Column, String, Integer, DateTime, Boolean, func, Enum as SQLAlchemyEnum
 )
-from sqlalchemy.dialects.postgresql import UUID, ENUM
+from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 from app.database import Base
 
@@ -20,7 +20,7 @@ class User(Base):
     """
     Represents a user within the application, corresponding to the 'users' table in the database.
     This class uses SQLAlchemy ORM for mapping attributes to database columns efficiently.
-    
+
     Attributes:
         id (UUID): Unique identifier for the user.
         nickname (str): Unique nickname for privacy, required.
@@ -28,8 +28,7 @@ class User(Base):
         email_verified (bool): Flag indicating if the email has been verified.
         hashed_password (str): Hashed password for security, required.
         first_name (str): Optional first name of the user.
-        last_name (str): Optional first name of the user.
-
+        last_name (str): Optional last name of the user.
         bio (str): Optional biographical information.
         profile_picture_url (str): Optional URL to a profile picture.
         linkedin_profile_url (str): Optional LinkedIn profile URL.
@@ -70,25 +69,28 @@ class User(Base):
     is_locked: Mapped[bool] = Column(Boolean, default=False)
     created_at: Mapped[datetime] = Column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
-    verification_token = Column(String, nullable=True)
+    verification_token: Mapped[str] = Column(String, nullable=True)
     email_verified: Mapped[bool] = Column(Boolean, default=False, nullable=False)
     hashed_password: Mapped[str] = Column(String(255), nullable=False)
-
 
     def __repr__(self) -> str:
         """Provides a readable representation of a user object."""
         return f"<User {self.nickname}, Role: {self.role.name}>"
 
     def lock_account(self):
+        """Locks the user account."""
         self.is_locked = True
 
     def unlock_account(self):
+        """Unlocks the user account."""
         self.is_locked = False
 
     def verify_email(self):
+        """Marks the user's email as verified."""
         self.email_verified = True
 
     def has_role(self, role_name: UserRole) -> bool:
+        """Checks if the user has a specified role."""
         return self.role == role_name
 
     def update_professional_status(self, status: bool):
