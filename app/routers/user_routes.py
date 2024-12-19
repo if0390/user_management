@@ -4,13 +4,6 @@ updating, and deleting (CRUD) user information. It uses OAuth2 with Password Flo
 users can perform certain operations. Additionally, the file showcases the integration of FastAPI with SQLAlchemy for asynchronous
 database operations, enhancing performance by non-blocking database calls.
 
-The implementation emphasizes RESTful API principles, with endpoints for each CRUD operation and the use of HTTP status codes
-and exceptions to communicate the outcome of operations. It introduces the concept of HATEOAS (Hypermedia as the Engine of
-Application State) by including navigational links in API responses, allowing clients to discover other related operations dynamically.
-
-OAuth2PasswordBearer is employed to extract the token from the Authorization header and verify the user's identity, providing a layer
-of security to the operations that manipulate user data.
-
 Key Highlights:
 - Use of FastAPI's Dependency Injection system to manage database sessions and user authentication.
 - Demonstrates how to perform CRUD operations in an asynchronous manner using SQLAlchemy with FastAPI.
@@ -30,6 +23,7 @@ from app.utils.link_generation import create_user_links
 router = APIRouter()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
+
 @router.patch("/users/{user_id}/profile", response_model=UserResponse, tags=["User Management"])
 async def update_profile_fields(
     user_id: UUID,
@@ -37,7 +31,7 @@ async def update_profile_fields(
     request: Request,
     db: AsyncSession = Depends(get_db),
     token: str = Depends(oauth2_scheme),
-    current_user: dict = Depends(get_current_user)
+    current_user: dict = Depends(get_current_user),
 ):
     """
     Update specific fields in the user's profile.
@@ -57,6 +51,10 @@ async def update_profile_fields(
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Permission denied.")
 
     user_data = user_update.model_dump(exclude_unset=True)
+
+    # Debugging Log
+    print(f"Updating user {user_id} with data: {user_data}")
+
     updated_user = await UserService.update(db, user_id, user_data)
 
     if not updated_user:
@@ -76,8 +74,9 @@ async def update_profile_fields(
         last_login_at=updated_user.last_login_at,
         created_at=updated_user.created_at,
         updated_at=updated_user.updated_at,
-        links=create_user_links(updated_user.id, request)
+        links=create_user_links(updated_user.id, request),
     )
+
 
 @router.post("/users/{user_id}/upgrade-status", response_model=UserResponse, tags=["User Management"])
 async def upgrade_professional_status(
@@ -85,7 +84,7 @@ async def upgrade_professional_status(
     request: Request,
     db: AsyncSession = Depends(get_db),
     token: str = Depends(oauth2_scheme),
-    current_user: dict = Depends(require_role(["ADMIN", "MANAGER"]))
+    current_user: dict = Depends(require_role(["ADMIN", "MANAGER"])),
 ):
     """
     Upgrade the professional status of a user.
@@ -108,8 +107,11 @@ async def upgrade_professional_status(
     if user.role == "PROFESSIONAL":
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="User is already a professional."
+            detail="User is already a professional.",
         )
+
+    # Debugging Log
+    print(f"Upgrading user {user_id} to PROFESSIONAL status.")
 
     updated_user = await UserService.update(db, user_id, {"role": "PROFESSIONAL"})
 
@@ -127,5 +129,5 @@ async def upgrade_professional_status(
         last_login_at=updated_user.last_login_at,
         created_at=updated_user.created_at,
         updated_at=updated_user.updated_at,
-        links=create_user_links(updated_user.id, request)
+        links=create_user_links(updated_user.id, request),
     )
