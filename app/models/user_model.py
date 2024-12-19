@@ -1,4 +1,3 @@
-from builtins import bool, int, str
 from datetime import datetime
 from enum import Enum
 import uuid
@@ -10,7 +9,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 from app.database import Base
 
 class UserRole(Enum):
-    """Enumeration of user roles within the application, stored as ENUM in the database."""
+    """Enumeration of user roles within the application."""
     ANONYMOUS = "ANONYMOUS"
     AUTHENTICATED = "AUTHENTICATED"
     MANAGER = "MANAGER"
@@ -18,36 +17,8 @@ class UserRole(Enum):
 
 class User(Base):
     """
-    Represents a user within the application, corresponding to the 'users' table in the database.
-    This class uses SQLAlchemy ORM for mapping attributes to database columns efficiently.
-
-    Attributes:
-        id (UUID): Unique identifier for the user.
-        nickname (str): Unique nickname for privacy, required.
-        email (str): Unique email address, required.
-        email_verified (bool): Flag indicating if the email has been verified.
-        hashed_password (str): Hashed password for security, required.
-        first_name (str): Optional first name of the user.
-        last_name (str): Optional last name of the user.
-        bio (str): Optional biographical information.
-        profile_picture_url (str): Optional URL to a profile picture.
-        linkedin_profile_url (str): Optional LinkedIn profile URL.
-        github_profile_url (str): Optional GitHub profile URL.
-        role (UserRole): Role of the user within the application.
-        is_professional (bool): Flag indicating professional status.
-        professional_status_updated_at (datetime): Timestamp of last professional status update.
-        last_login_at (datetime): Timestamp of the last login.
-        failed_login_attempts (int): Count of failed login attempts.
-        is_locked (bool): Flag indicating if the account is locked.
-        created_at (datetime): Timestamp when the user was created, set by the server.
-        updated_at (datetime): Timestamp of the last update, set by the server.
-
-    Methods:
-        lock_account(): Locks the user account.
-        unlock_account(): Unlocks the user account.
-        verify_email(): Marks the user's email as verified.
-        has_role(role_name): Checks if the user has a specified role.
-        update_professional_status(status): Updates the professional status and logs the update time.
+    Represents a user within the application.
+    Maps attributes to database columns using SQLAlchemy ORM.
     """
     __tablename__ = "users"
     __mapper_args__ = {"eager_defaults": True}
@@ -96,4 +67,11 @@ class User(Base):
     def update_professional_status(self, status: bool):
         """Updates the professional status and logs the update time."""
         self.is_professional = status
-        self.professional_status_updated_at = func.now()
+        self.professional_status_updated_at = datetime.utcnow()
+
+    def update_profile(self, **fields):
+        """Updates multiple profile fields dynamically."""
+        for field, value in fields.items():
+            if hasattr(self, field):
+                setattr(self, field, value)
+        self.updated_at = datetime.utcnow()

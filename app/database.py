@@ -11,10 +11,13 @@ class Database:
     @classmethod
     def initialize(cls, database_url: str, echo: bool = False):
         """Initialize the async engine and sessionmaker."""
-        if cls._engine is None:  # Ensure engine is created once
+        if cls._engine is None:
             cls._engine = create_async_engine(database_url, echo=echo, future=True)
             cls._session_factory = sessionmaker(
-                bind=cls._engine, class_=AsyncSession, expire_on_commit=False, future=True
+                bind=cls._engine,
+                class_=AsyncSession,
+                expire_on_commit=False,
+                future=True
             )
 
     @classmethod
@@ -23,3 +26,9 @@ class Database:
         if cls._session_factory is None:
             raise ValueError("Database not initialized. Call `initialize()` first.")
         return cls._session_factory
+
+    @classmethod
+    async def close(cls):
+        """Close the database engine if initialized."""
+        if cls._engine is not None:
+            await cls._engine.dispose()
